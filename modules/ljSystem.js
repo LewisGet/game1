@@ -43,19 +43,24 @@ ljGame = function () {
 
     this.random_location = function (min_range, max_range, default_value) {
         default_value = (typeof default_value !== 'undefined') ?  default_value : false;
+        direction = [
+            (50).lucky() ?  1 : -1,
+            (50).lucky() ?  1 : -1,
+            (50).lucky() ?  1 : -1
+        ];
 
         if (default_value == "y") {
             return [
-                this.random_int(min_range, max_range),
+                this.random_int(min_range, max_range) * direction[0],
                 0,
-                this.random_int(min_range, max_range)
+                this.random_int(min_range, max_range) * direction[2]
             ];
         }
 
         return [
-            this.random_int(min_range, max_range),
-            this.random_int(min_range, max_range),
-            this.random_int(min_range, max_range)
+            this.random_int(min_range, max_range) * direction[0],
+            this.random_int(min_range, max_range) * direction[1],
+            this.random_int(min_range, max_range) * direction[2]
         ];
     };
 
@@ -177,12 +182,16 @@ ljGame = function () {
         var entity_quantity = this.get_entity_quantity();
         var em = [];
 
-        spawn_point.push(this.get_point(this.random_location(10, 30, "y")));
-        spawn_point.push(this.get_point(this.random_location(-50, -20, "y")));
-        spawn_point.push(this.get_point(this.random_location(-10, -5, "y")));
+        spawn_point.push(this.get_point(this.random_location(20, 60, "y")));
+        spawn_point.push(this.get_point(this.random_location(25, 80, "y")));
+        spawn_point.push(this.get_point(this.random_location(30, 100, "y")));
+        spawn_point.push(this.get_point(this.random_location(25, 80, "y")));
+        spawn_point.push(this.get_point(this.random_location(30, 100, "y")));
 
         for (var i = 0; i < entity_quantity; i++) {
-            this.spawn_entity();
+            var point = this.random_int(1, 5);
+
+            this.spawn_entity(spawn_point[point]);
         }
 
         this.post_game_step();
