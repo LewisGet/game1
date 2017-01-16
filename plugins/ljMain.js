@@ -1,0 +1,1 @@
+exports.ljGame = require('ljSystem');
