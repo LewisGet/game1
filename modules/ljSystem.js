@@ -194,6 +194,9 @@ ljGame = function () {
             this.spawn_entity(spawn_point[point]);
         }
 
+        this.spawn_resource(this.random_location(30, 60, "y"));
+        this.spawn_resource(this.random_location(60, 80, "y"));
+
         this.post_game_step();
     };
 
@@ -254,6 +257,58 @@ ljGame = function () {
                 this.source++;
                 this.regist_entity.splice(i, 1);
             }
+        }
+    };
+
+    this.spawn_resource = function (spawn_point) {
+        spawn_point = (typeof spawn_point !== 'undefined') ?  spawn_point : [0, 0, 0];
+
+        if (Array.isArray(spawn_point))
+        {
+            spawn_point = this.get_point(spawn_point);
+        }
+
+        spawn_point.block.setTypeId(54);
+
+        var block = spawn_point.block;
+        var state = block.getState();
+        var inventory = state.getBlockInventory();
+        var itemType = org.bukkit.Material;
+
+        if ((5).lucky())
+        {
+            var item = new org.bukkit.inventory.ItemStack(itemType.DIAMOND_SPADE, 1);
+            inventory.addItem(item);
+        }
+
+        if ((10).lucky())
+        {
+            var item = new org.bukkit.inventory.ItemStack(itemType.BOAT, 1);
+            inventory.addItem(item);
+        }
+
+        if ((30).lucky())
+        {
+            var item = new org.bukkit.inventory.ItemStack(itemType.CAKE, 1);
+            inventory.addItem(item);
+        }
+
+        if ((10).lucky())
+        {
+            var item = new org.bukkit.inventory.ItemStack(itemType.COOKIE, 1);
+            inventory.addItem(item);
+        }
+
+        if ((80).lucky())
+        {
+            var item = new org.bukkit.inventory.ItemStack(itemType.EGG, 16);
+            inventory.addItem(item);
+        }
+
+        if ((50).lucky())
+        {
+            var item = new org.bukkit.inventory.ItemStack(itemType.GOLD_SWORD, 2);
+            inventory.addItem(item);
         }
     };
 };
