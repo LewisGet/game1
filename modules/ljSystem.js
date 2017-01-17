@@ -22,7 +22,7 @@ ljGame = function () {
     this.default_strong_entity_probability = 3;
     this.default_speed_entity_probability = 10;
     this.default_entity_quantity = 15;
-    this.quantity_diff = 1.5;
+    this.quantity_diff = 1.2;
     this.speed_probability_diff = 1.3;
     this.strong_probability_diff = 1.3;
     this.max_speed_probability = 80;
@@ -33,12 +33,15 @@ ljGame = function () {
     this.game_timer = 0;
     this.regist_entity = [];
     this.next_step_time = 20;
+    this.game_time = 0;
+    this.pre_execute = 0;
+    this.pre_execute_time = 0;
     this.game_step = [];
 
-    this.random_int = function (min_range, max_range) {
-        var range = min_range - max_range;
-
-        return parseInt(Math.random() * range) + min_range;
+    this.random_int = function (min, max) {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min)) + min;
     };
 
     this.random_location = function (min_range, max_range, default_value) {
@@ -50,11 +53,15 @@ ljGame = function () {
         ];
 
         if (default_value == "y") {
-            return [
+            var debug = [
                 this.random_int(min_range, max_range) * direction[0],
                 0,
                 this.random_int(min_range, max_range) * direction[2]
             ];
+
+            console.log(debug);
+
+            return debug;
         }
 
         return [
@@ -101,6 +108,13 @@ ljGame = function () {
         var entity = this.player.world.spawnEntity(spawn_point, entity_type);
         var speed_up = (this.get_speed_probability()).lucky();
         var strong_up = (this.get_strong_probability()).lucky();
+
+        if (this.level == 0)
+        {
+            speed_up = false;
+            strong_up = false;
+            entity.setBaby(false);
+        }
 
         entity.setTarget(this.player);
 
@@ -167,7 +181,7 @@ ljGame = function () {
     };
 
     this.pre_game_step = function () {
-        alert("level " + this.level.toString() + " is comming.");
+        this.player.chat("level " + this.level.toString() + " is comming.");
     };
 
     this.post_game_step = function () {
@@ -182,11 +196,11 @@ ljGame = function () {
         var entity_quantity = this.get_entity_quantity();
         var em = [];
 
-        spawn_point.push(this.get_point(this.random_location(20, 60, "y")));
-        spawn_point.push(this.get_point(this.random_location(25, 80, "y")));
-        spawn_point.push(this.get_point(this.random_location(30, 100, "y")));
-        spawn_point.push(this.get_point(this.random_location(25, 80, "y")));
-        spawn_point.push(this.get_point(this.random_location(30, 100, "y")));
+        spawn_point.push(this.get_point(this.random_location(20, 30, "y")));
+        spawn_point.push(this.get_point(this.random_location(12, 25, "y")));
+        spawn_point.push(this.get_point(this.random_location(15, 25, "y")));
+        spawn_point.push(this.get_point(this.random_location(10, 30, "y")));
+        spawn_point.push(this.get_point(this.random_location(10, 20, "y")));
 
         for (var i = 0; i < entity_quantity; i++) {
             var point = this.random_int(1, 5);
@@ -194,16 +208,13 @@ ljGame = function () {
             this.spawn_entity(spawn_point[point]);
         }
 
-        this.spawn_resource(this.random_location(30, 60, "y"));
-        this.spawn_resource(this.random_location(60, 80, "y"));
-
         this.post_game_step();
     };
 
     this.start_next_step = function () {
         if (this.game_step[this.level])
         {
-            (this.game_step[this.level])();
+            (this.game_step[this.level])(this);
         }
         else
         {
@@ -211,6 +222,33 @@ ljGame = function () {
         }
 
         return true;
+    };
+
+    this.game_step[5] = function (ljGame) {
+        ljGame.pre_game_step();
+
+        ljGame.pre_execute_time = ljGame.game_time + 5;
+        ljGame.player.chat("The weather does not look very good. 5sec...?");
+
+        ljGame.pre_execute = function (ljGame) {
+            var player_location = ljGame.player.location;
+
+            var start_x = player_location.x - 5;
+            var start_z = player_location.z - 5;
+
+            for (var rx = 0; rx < 10; rx ++)
+            {
+                for (var rz = 0; rz < 10; rz++)
+                {
+                    spawn_location = new org.bukkit.Location(ljGame.player.world, start_x + rx, ljGame.map.center[1], start_z + rz);
+                    ljGame.player.world.strikeLightning(spawn_location);
+                }
+            }
+        };
+
+        ljGame.spawn_entity([0, 0, 0], ljGame.entity_type.CHICKEN);
+
+        ljGame.post_game_step();
     };
 
     this.game_step_execute = function () {
@@ -221,19 +259,28 @@ ljGame = function () {
             return false;
         }
 
-        this.step_time_come_down();
+        this.timer();
         this.spawn_warning();
 
         if (this.next_step_time < 1)
         {
             this.start_next_step();
             this.next_step_time = 20;
+            this.spawn_resource(this.random_location(30, 60, "y"));
+            this.spawn_resource(this.random_location(60, 80, "y"));
+        }
+
+        if (this.pre_execute_time == this.game_time)
+        {
+            this.pre_execute(this);
+            this.pre_execute = 0;
         }
 
         return true;
     };
 
-    this.step_time_come_down = function () {
+    this.timer = function () {
+        this.game_time++;
         this.next_step_time--;
 
         if (this.next_step_time < 0)
@@ -245,7 +292,7 @@ ljGame = function () {
     this.spawn_warning = function () {
         if (this.next_step_time != 0)
         {
-            alert("level " + this.level + " start after " + this.next_step_time + " sec.");
+            this.player.chat("level " + this.level + " start after " + this.next_step_time + " sec.");
         }
     };
 
@@ -268,47 +315,57 @@ ljGame = function () {
             spawn_point = this.get_point(spawn_point);
         }
 
-        spawn_point.block.setTypeId(54);
-
-        var block = spawn_point.block;
-        var state = block.getState();
-        var inventory = state.getBlockInventory();
         var itemType = org.bukkit.Material;
+        var world = this.player.world;
 
         if ((5).lucky())
         {
             var item = new org.bukkit.inventory.ItemStack(itemType.DIAMOND_SPADE, 1);
-            inventory.addItem(item);
+            world.dropItem(spawn_point, item);
         }
 
         if ((10).lucky())
         {
             var item = new org.bukkit.inventory.ItemStack(itemType.BOAT, 1);
-            inventory.addItem(item);
+            world.dropItem(spawn_point, item);
         }
 
         if ((30).lucky())
         {
-            var item = new org.bukkit.inventory.ItemStack(itemType.CAKE, 1);
-            inventory.addItem(item);
+            var item = new org.bukkit.inventory.ItemStack(itemType.APPLE, 5);
+            world.dropItem(spawn_point, item);
         }
 
-        if ((10).lucky())
+        if ((70).lucky())
         {
-            var item = new org.bukkit.inventory.ItemStack(itemType.COOKIE, 1);
-            inventory.addItem(item);
+            var item = new org.bukkit.inventory.ItemStack(itemType.COOKIE, 8);
+            world.dropItem(spawn_point, item);
         }
 
         if ((80).lucky())
         {
             var item = new org.bukkit.inventory.ItemStack(itemType.EGG, 16);
-            inventory.addItem(item);
+            world.dropItem(spawn_point, item);
+            var item = new org.bukkit.inventory.ItemStack(itemType.EGG, 16);
+            world.dropItem(spawn_point, item);
         }
 
         if ((50).lucky())
         {
             var item = new org.bukkit.inventory.ItemStack(itemType.GOLD_SWORD, 2);
-            inventory.addItem(item);
+            world.dropItem(spawn_point, item);
+        }
+
+        if ((80).lucky())
+        {
+            var item = new org.bukkit.inventory.ItemStack(itemType.WOOD_SWORD, 2);
+            world.dropItem(spawn_point, item);
+        }
+
+        if ((10).lucky())
+        {
+            var item = new org.bukkit.inventory.ItemStack(itemType.GOLDEN_APPLE, 2);
+            world.dropItem(spawn_point, item);
         }
     };
 };
