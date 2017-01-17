@@ -228,7 +228,8 @@ ljGame = function () {
         ljGame.pre_game_step();
 
         ljGame.pre_execute_time = ljGame.game_time + 5;
-        ljGame.player.chat("The weather does not look very good. 5sec...?");
+        ljGame.player.chat("The weather does not look very good.");
+        ljGame.player.chat("we need to move on. 5sec...?");
 
         ljGame.pre_execute = function (ljGame) {
             var player_location = ljGame.player.location;
