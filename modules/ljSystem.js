@@ -368,6 +368,12 @@ ljGame = function () {
             var item = new org.bukkit.inventory.ItemStack(itemType.GOLDEN_APPLE, 2);
             world.dropItem(spawn_point, item);
         }
+
+        if ((30).lucky())
+        {
+            var item = new org.bukkit.inventory.ItemStack(itemType.POTION, 2);
+            world.dropItem(spawn_point, item);
+        }
     };
 };
 
