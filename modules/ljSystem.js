@@ -35,6 +35,7 @@ ljGame = function () {
     this.next_step_time = 20;
     this.game_time = 0;
     this.pre_execute = 0;
+    this.pre_execute_value = {};
     this.pre_execute_time = 0;
     this.game_step = [];
 
@@ -231,11 +232,11 @@ ljGame = function () {
         ljGame.player.chat("The weather does not look very good.");
         ljGame.player.chat("we need to move on. 5sec...?");
 
-        ljGame.pre_execute = function (ljGame) {
-            var player_location = ljGame.player.location;
+        ljGame.pre_execute_value = {x: ljGame.player.location.x, z: ljGame.player.location.z};
 
-            var start_x = player_location.x - 5;
-            var start_z = player_location.z - 5;
+        ljGame.pre_execute = function (ljGame) {
+            var start_x = ljGame.pre_execute_value.x - 5;
+            var start_z = ljGame.pre_execute_value.z - 5;
 
             for (var rx = 0; rx < 10; rx ++)
             {
@@ -275,6 +276,7 @@ ljGame = function () {
         {
             this.pre_execute(this);
             this.pre_execute = 0;
+            this.pre_execute_value = {};
         }
 
         return true;
