@@ -143,6 +143,11 @@ ljMap = function () {
     };
 
     this.initMap = function () {
+        if (this.world == 0)
+        {
+            this.world = (org.bukkit.Bukkit.getPlayer("LewisJang")).world;
+        }
+
         var entities = this.world.getEntities();
 
         for (var x = (this.size * -1); x <= this.size; x++)
