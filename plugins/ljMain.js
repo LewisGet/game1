@@ -14,3 +14,7 @@ events.entityDeath(function (event) {
         kernel.ljGame.game_timer.cancel();
     }
 });
+
+events.blockBreak(function (event) { 
+    event.setCancelled(true);
+});
