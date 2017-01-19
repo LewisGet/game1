@@ -290,6 +290,8 @@ ljGame = function () {
         {
             this.next_step_time = 0;
         }
+
+        this.player.world.setTime(18000);
     };
 
     this.spawn_warning = function () {
