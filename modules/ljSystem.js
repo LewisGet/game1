@@ -1,17 +1,4 @@
-Number.prototype.between = function (a, b) {
-    var min = Math.min.apply(Math, [a, b]);
-    var max = Math.max.apply(Math, [a, b]);
-
-    return this > min && this < max;
-};
-
-Number.prototype.lucky = function () {
-    var get = parseInt(Math.random() * 100);
-
-    return (get < this);
-};
-
-ljGame = function () {
+exports.ljGame = function () {
     this.player = 0;
     this.playerId = "LewisJang";
     this.map = {
@@ -33,11 +20,32 @@ ljGame = function () {
     this.game_timer = 0;
     this.regist_entity = [];
     this.next_step_time = 20;
+    this.is_entity_spawn_done = false;
     this.game_time = 0;
     this.pre_execute = 0;
     this.pre_execute_value = {};
     this.pre_execute_time = 0;
     this.game_step = [];
+    this.is_drop_resource = false;
+    this.drop_resource_locations = [];
+    this.drop_resource_warning_time = 0;
+
+    Number.prototype.between = function (a, b) {
+        var min = Math.min.apply(Math, [a, b]);
+        var max = Math.max.apply(Math, [a, b]);
+
+        return this > min && this < max;
+    };
+
+    Number.prototype.lucky = function () {
+        var get = parseInt(Math.random() * 100);
+
+        return (get < this);
+    };
+
+    Array.prototype.clone = function() {
+        return this.slice(0);
+    };
 
     this.random_int = function (min, max) {
         min = Math.ceil(min);
@@ -85,6 +93,8 @@ ljGame = function () {
     };
 
     this.get_point = function (xyz) {
+        xyz = xyz.clone();
+
         xyz[0] += this.map.center[0];
         xyz[1] += this.map.center[1];
         xyz[2] += this.map.center[2];
@@ -187,6 +197,7 @@ ljGame = function () {
 
     this.post_game_step = function () {
         this.level_up();
+        this.is_entity_spawn_done = true;
     };
 
     this.game_step_basic = function () {
@@ -253,24 +264,136 @@ ljGame = function () {
         ljGame.post_game_step();
     };
 
+    this.set_block = function (xyz, data) {
+        var location = this.get_point(xyz);
+
+        location.block.setTypeId(data[0]);
+        location.block.setData(data[1]);
+    };
+
+    this.get_drop_resource_warning_points = function (xyz, default_option) {
+        default_option = (typeof default_option !== 'undefined') ?  default_option : true;
+
+        var x = xyz[0];
+        var y = xyz[1] + 6 + (this.drop_resource_warning_time % 2);
+        var z = xyz[2];
+
+        if (default_option == "up")
+        {
+            var y = xyz[1] + 6 + 1;
+        }
+
+        if (default_option == "down")
+        {
+            var y = xyz[1] + 6;
+        }
+
+        var xyzs = [
+            [x, y, z],
+            [x + 0, y + 1, z + 1],
+            [x - 0, y + 1, z - 1],
+            [x + 1, y + 1, z + 0],
+            [x - 1, y + 1, z - 0],
+
+            [x + 0, y + 2, z + 1],
+            [x + 1, y + 2, z + 1],
+            [x + 1, y + 2, z + 0],
+            [x + 1, y + 2, z - 1],
+            [x + 0, y + 2, z - 1],
+            [x - 1, y + 2, z - 1],
+            [x - 1, y + 2, z + 0],
+            [x - 1, y + 2, z + 1],
+
+            [x, y + 2, z],
+            [x, y + 3, z],
+            [x, y + 4, z],
+            [x, y + 5, z]
+        ];
+
+        return xyzs;
+    };
+
+    this.drop_resource_warning_block_clear = function () {
+        for (var i = 0; i < this.drop_resource_locations.length; i++)
+        {
+            var xyz = this.drop_resource_locations[i];
+            var xyzsa = this.get_drop_resource_warning_points(xyz, "up");
+            var xyzsb = this.get_drop_resource_warning_points(xyz, "down");
+            var xyzs = xyzsa.concat(xyzsb);
+
+            for (var xi = 0; xi < xyzs.length; xi++)
+            {
+                this.set_block(xyzs[xi], [0, 0]);
+            }
+        }
+    };
+
+    this.drop_resource_warning = function () {
+        this.drop_resource_warning_block_clear();
+
+        for (var i = 0; i < this.drop_resource_locations.length; i++)
+        {
+            var xyz = this.drop_resource_locations[i];
+            var xyzs = this.get_drop_resource_warning_points(xyz);
+
+            for (var xi = 0; xi < xyzs.length; xi++)
+            {
+                this.set_block(xyzs[xi], [95, 1]);
+            }
+        }
+    };
+
+    this.drop_resource_warning_done = function () {
+        this.drop_resource_warning_block_clear();
+        this.drop_resource_locations = [];
+    };
+
+    this.drop_resource_rule = function () {
+        if (! this.is_drop_resource)
+        {
+            this.spawn_resource(this.random_location(10, 30, "y"));
+            this.spawn_resource(this.random_location(10, 30, "y"));
+        }
+
+        if (this.drop_resource_warning_time > 0)
+        {
+            this.drop_resource_warning();
+        }
+
+        if (this.drop_resource_warning_time == 0)
+        {
+            this.drop_resource_warning_done();
+        }
+    };
+
+    this.spawn_entity_rule = function () {
+        if (this.regist_entity.length < 8)
+        {
+            if (this.next_step_time > 0 && this.next_step_time < 20)
+            {
+                this.spawn_warning();
+            }
+
+            if (this.next_step_time == 0 && this.is_entity_spawn_done == true)
+            {
+                this.next_step_time = 20;
+                this.is_entity_spawn_done = false;
+                this.is_drop_resource = false;
+            }
+
+            if (! this.is_entity_spawn_done && this.next_step_time == 0)
+            {
+                this.start_next_step();
+            }
+        }
+    };
+
     this.game_step_execute = function () {
         this.count_source();
-
-        if (this.regist_entity.length > 8)
-        {
-            return false;
-        }
-
         this.timer();
-        this.spawn_warning();
 
-        if (this.next_step_time < 1)
-        {
-            this.start_next_step();
-            this.next_step_time = 20;
-            this.spawn_resource(this.random_location(30, 60, "y"));
-            this.spawn_resource(this.random_location(60, 80, "y"));
-        }
+        this.drop_resource_rule();
+        this.spawn_entity_rule();
 
         if (this.pre_execute_time == this.game_time)
         {
@@ -285,13 +408,17 @@ ljGame = function () {
     this.timer = function () {
         this.game_time++;
         this.next_step_time--;
+        this.drop_resource_warning_time--;
 
         if (this.next_step_time < 0)
         {
             this.next_step_time = 0;
         }
 
-        this.player.world.setTime(18000);
+        if (this.drop_resource_warning_time < 0)
+        {
+            this.drop_resource_warning_time = 0;
+        }
     };
 
     this.spawn_warning = function () {
@@ -312,16 +439,17 @@ ljGame = function () {
         }
     };
 
-    this.spawn_resource = function (spawn_point) {
-        spawn_point = (typeof spawn_point !== 'undefined') ?  spawn_point : [0, 0, 0];
+    this.spawn_resource = function (spawn_point_array) {
+        this.is_drop_resource = true;
+        this.drop_resource_locations.push(spawn_point_array);
+        this.drop_resource_warning_time = 10;
 
-        if (Array.isArray(spawn_point))
-        {
-            spawn_point = this.get_point(spawn_point);
-        }
-
+        var spawn_point = this.get_point(spawn_point_array);
         var itemType = org.bukkit.Material;
         var world = this.player.world;
+
+        world.playEffect(spawn_point, org.bukkit.Effect.ENDER_SIGNAL, 10);
+        world.playEffect(spawn_point, org.bukkit.Effect.ZOMBIE_CHEW_IRON_DOOR, 10);
 
         if ((5).lucky())
         {
@@ -380,35 +508,3 @@ ljGame = function () {
         }
     };
 };
-
-exports.ljGame = new ljGame();
-
-exports.ljGame.game_timer = setInterval(function () {
-    try
-    {
-        if (exports.ljGame.player == 0)
-        {
-            var defaultEntity = org.bukkit.Bukkit.getPlayer(exports.ljGame.playerId);
-
-            if (defaultEntity)
-            {
-                var spawn_player_point = new org.bukkit.Location(defaultEntity.world, exports.ljGame.map.center[0], exports.ljGame.map.center[1], exports.ljGame.map.center[2]);
-
-                exports.ljGame.player = defaultEntity;
-                exports.ljGame.player.teleport(spawn_player_point);
-            }
-            else
-            {
-                throw ("entity need to init.");
-            }
-        }
-        else
-        {
-            exports.ljGame.game_step_execute();
-        }
-    }
-    catch (e)
-    {
-        console.log(e);
-    }
-}, 1000);
