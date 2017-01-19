@@ -1,6 +1,8 @@
 var kernel = require('ljSystem');
+var builder = require('ljMap');
 
 exports.init = kernel;
+exports.builder = builder;
 
 events.entityDeath(function (event) {
     var entity = event.getEntity();
