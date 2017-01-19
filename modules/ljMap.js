@@ -159,9 +159,9 @@ ljMap = function () {
             }
         }
 
-        for (var i = 0; i < 10; i++)
+        for (var i = 0; i < 15; i++)
         {
-            var xyz = this.random_location(10, this.size - 10, "y");
+            var xyz = this.random_location(8, this.size - 10, "y");
 
             this.cross(xyz[0], xyz[2]);
         }
