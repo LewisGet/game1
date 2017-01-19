@@ -145,21 +145,6 @@ ljMap = function () {
     this.initMap = function () {
         var entities = this.world.getEntities();
 
-        for (var i = 0; i < entities.length; i++)
-        {
-            var thisEntity = entities[i];
-
-            try
-            {
-                // remove all entity (item on floor)
-                if (thisEntity.getType() != org.bukkit.entity.EntityType.PLAYER)
-                {
-                    thisEntity.remove();
-                }
-            }
-            catch (e) { }
-        }
-
         for (var x = (this.size * -1); x <= this.size; x++)
         {
             for (var y = (this.size * -1); y <= this.size; y++)
@@ -179,6 +164,21 @@ ljMap = function () {
             var xyz = this.random_location(10, this.size - 10, "y");
 
             this.cross(xyz[0], xyz[2]);
+        }
+
+        for (var i = 0; i < entities.length; i++)
+        {
+            var thisEntity = entities[i];
+
+            try
+            {
+                // remove all entity (item on floor)
+                if (thisEntity.getType() != org.bukkit.entity.EntityType.PLAYER)
+                {
+                    thisEntity.remove();
+                }
+            }
+            catch (e) { }
         }
     };
 };
